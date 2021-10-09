@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2>Articles</h2>
+<hr>
+{% if articles %}
+<ul class="list-group">
+{% for article in articles  %}
+    <li class="list-group-item">{{article.title}}</li>
+{% endfor %}  
+</ul>
+{% else %}
+<div class="alert alert-danger">There are no article to this blog yet</div>
+{% endif %}
+
+{% endblock body %}
+
+
