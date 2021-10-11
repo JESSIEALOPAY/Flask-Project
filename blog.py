@@ -1,3 +1,4 @@
+import re
 from MySQLdb import cursors
 from flask import Flask, render_template, flash, redirect, url_for, session, logging, request
 from flask_mysqldb import MySQL
@@ -61,9 +62,16 @@ def about():
     return render_template("about.html")
 
 
-@app.route("/articles/<string:id>")
+@app.route("/article/<string:id>")
 def articlesWithId(id):
-    return f"Article id is {id}"
+    cursor= mysql.connection.cursor()
+    result= cursor.execute("select * from articles where id=%s",(id,))
+    if result>0:
+        article= cursor.fetchone()
+        return render_template("article.html",article=article)
+    else:
+        return render_template("article.html")
+
 
 @app.route("/register",methods=["GET","POST"])
 def reqister():
@@ -121,7 +129,14 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html")
+    cursor=mysql.connection.cursor()
+    queryString="select * from articles where author=%s"
+    result= cursor.execute(queryString,(session["user"],))
+    if result>0:
+        articles= cursor.fetchall()
+        return render_template("dashboard.html",articles=articles)
+    else:
+        return render_template("dashboard.html")
 
 @app.route("/addarticle",methods=["GET","POST"])
 @login_required
@@ -139,6 +154,47 @@ def addarticle():
         return redirect(url_for("dashboard"))
     return render_template("addarticle.html",form=form)
 
+@app.route("/edit/<string:id>",methods=["GET","POST"])
+@login_required
+def edit(id):
+    if request.method=="GET":
+        cursor= mysql.connection.cursor()
+        result= cursor.execute("select * from articles where author=%s and id=%s",(session["user"],id))
+        if result>0:
+            article= cursor.fetchone()
+            form= ArticleForm()
+            form.title.data=article["title"]
+            form.content.data=article["content"]
+            return render_template("edit.html",form=form)
+
+        else:
+            flash("You are not authorization or Article is not found")
+            return redirect(url_for("index"))
+
+    else:
+        form= ArticleForm(request.form)    
+        cursor= mysql.connection.cursor()
+        uploadTitle= form.title.data    
+        uploadContent= form.content.data    
+        cursor.execute("update articles set title=%s, content=%s where id=%s",(uploadTitle,uploadContent,id))
+        mysql.connection.commit()
+        flash("Your article succesfully uploaded")
+        return redirect(url_for("dashboard"))
+
+
+@app.route("/delete/<string:id>")
+@login_required
+def deleteArticle(id):
+    cursor= mysql.connection.cursor()
+    result= cursor.execute("select * from articles where author= %s and id=%s",(session["user"],id))
+    if result>0:
+        cursor.execute("Delete from articles where id= %s",(id,))
+        mysql.connection.commit()
+        return redirect(url_for("dashboard"))
+    else:
+        flash("You are not authorization this aticle or Article is not found","danger")
+        return redirect(url_for("index"))
+
 #Artcile Form
 class ArticleForm(Form):
     title= StringField("ARTICLE HEADER",validators=[validators.Length(min=5,max=100)])
@@ -154,6 +210,27 @@ def articles():
         return render_template("articles.html",articles=articles)
     else:
         return render_template("articles.html")
+
+
+@app.route("/search",methods=["GET","POST"])
+def search():
+    if request.method=="GET":
+        return redirect(url_for("index"))
+    else:
+        keyword= request.form.get("keyword")
+        cursor=mysql.connection.cursor()
+        query=f"select * from articles where title like '%{keyword}%'"
+        result=cursor.execute(query)
+        if result:
+            articles= cursor.fetchall()
+            return render_template("articles.html",articles=articles)
+        else:
+            flash("Any Articles is found with your input","warning")
+            return redirect(url_for("articles"))
+
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

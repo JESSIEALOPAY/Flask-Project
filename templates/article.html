@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block body %}
+{% if article %}
+<h2>{{article.title}}</h2>
+<hr>
+<p>Author: {{article.author}}</p>
+<hr>
+<p>Created Date: {{article.currrent_date}}</p>
+<hr>
+{{article.content|safe}}
+{% else %}
+<div class="alert alert-warning">Sorry Article is not found with that id </div>
+{% endif %}
+
+{% endblock body %}

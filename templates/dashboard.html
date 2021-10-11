@@ -3,6 +3,35 @@
 <h3>Controle Board</h3>
 <h5>Controle Board</h5>
 <hr>
+{% if articles %}
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">ID</th>
+      <th scope="col">TITLE</th>
+      <th scope="col">AUTHOR</th>
+      <th scope="col">DATE</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for article in articles %}
+  <tr>
+      <th scope="row">{{article.id}}</th>
+      <td><a href="/article/{{article.id}}" style="text-decoration: none;">{{article.title}}</a></td>
+      <td>{{article.author}}</td>
+      <td>{{article.currrent_date}}</td>
+      <td><a href="/edit/{{article.id}}" class="btn btn-warning">Edit</a></td>
+      <td><a href="/delete/{{article.id}}" class="btn btn-danger">Delete</a></td>
+    </tr>
+  {% endfor %}
+    
+  </tbody>
+</table>
+
+{% else %}
+<div class="alert alert-danger">You have not any articles</div>
+{% endif %}
+
 
 <a href="/addarticle" class="btn btn-danger">Add Article</a>
 {% endblock body %} 
